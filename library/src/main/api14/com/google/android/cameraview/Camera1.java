@@ -17,7 +17,6 @@
 package com.google.android.cameraview;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
@@ -279,20 +278,9 @@ class Camera1 extends CameraViewImpl {
 
     @Override
     void setZoom(boolean isZoomIn, int width, int height) {
-        handleZoom(isZoomIn, mCamera);
-    }
+        Log.i("Camera1", "click setZoom");
 
-    @Override
-    void handFocus(float x, float y, int width, int height) {
-        if (Build.VERSION.SDK_INT < 14) {
-            Log.i("Camera1", "hand focus not supported");
-        } else {
-            handleFocusMetering(mCamera, x, y, width, height);
-        }
-    }
-
-    private void handleZoom(boolean isZoomIn, Camera camera) {
-        Camera.Parameters params = camera.getParameters();
+        Camera.Parameters params = mCamera.getParameters();
         if (params.isZoomSupported()) {
             int maxZoom = params.getMaxZoom();
             int zoom = params.getZoom();
@@ -302,45 +290,51 @@ class Camera1 extends CameraViewImpl {
                 zoom--;
             }
             params.setZoom(zoom);
-            camera.setParameters(params);
+            mCamera.setParameters(params);
         } else {
             Log.i("Camera1", "zoom not supported");
         }
     }
 
-    @TargetApi(14)
-    private void handleFocusMetering(Camera camera, float x, float y, int width, int height) {
-        Rect focusRect = calculateTapArea(x, y, 1f, width, height);
-        Rect meteringRect = calculateTapArea(x, y, 1.5f, width, height);
+    @Override
+    void handFocus(float x, float y, int width, int height) {
+        Log.i("Camera1", "click handFocus");
 
-        camera.cancelAutoFocus();
-        Camera.Parameters params = camera.getParameters();
-        if (params.getMaxNumFocusAreas() > 0) {
-            List<Camera.Area> focusAreas = new ArrayList<>();
-            focusAreas.add(new Camera.Area(focusRect, 800));
-            params.setFocusAreas(focusAreas);
+        if (Build.VERSION.SDK_INT < 14) {
+            Log.i("Camera1", "hand focus not supported");
         } else {
-            Log.i("Camera1", "focus areas not supported");
-        }
-        if (params.getMaxNumMeteringAreas() > 0) {
-            List<Camera.Area> meteringAreas = new ArrayList<>();
-            meteringAreas.add(new Camera.Area(meteringRect, 800));
-            params.setMeteringAreas(meteringAreas);
-        } else {
-            Log.i("Camera1", "metering areas not supported");
-        }
-//        final String currentFocusMode = params.getFocusMode();
-        params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
-        camera.setParameters(params);
+            Rect focusRect = calculateTapArea(x, y, 1f, width, height);
+            Rect meteringRect = calculateTapArea(x, y, 1.5f, width, height);
 
-//        camera.autoFocus(new Camera.AutoFocusCallback() {
-//            @Override
-//            public void onAutoFocus(boolean success, Camera camera) {
-//                Camera.Parameters params = camera.getParameters();
-//                params.setFocusMode(currentFocusMode);
-//                camera.setParameters(params);
-//            }
-//        });
+            mCamera.cancelAutoFocus();
+            Camera.Parameters params = mCamera.getParameters();
+            if (params.getMaxNumFocusAreas() > 0) {
+                List<Camera.Area> focusAreas = new ArrayList<>();
+                focusAreas.add(new Camera.Area(focusRect, 800));
+                params.setFocusAreas(focusAreas);
+            } else {
+                Log.i("Camera1", "focus areas not supported");
+            }
+            if (params.getMaxNumMeteringAreas() > 0) {
+                List<Camera.Area> meteringAreas = new ArrayList<>();
+                meteringAreas.add(new Camera.Area(meteringRect, 800));
+                params.setMeteringAreas(meteringAreas);
+            } else {
+                Log.i("Camera1", "metering areas not supported");
+            }
+            final String currentFocusMode = params.getFocusMode();
+            params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+            mCamera.setParameters(params);
+
+            mCamera.autoFocus(new Camera.AutoFocusCallback() {
+                @Override
+                public void onAutoFocus(boolean success, Camera camera) {
+                    Camera.Parameters params = camera.getParameters();
+                    params.setFocusMode(currentFocusMode);
+                    camera.setParameters(params);
+                }
+            });
+        }
     }
 
     @NonNull

@@ -39,6 +39,7 @@ import android.view.Surface;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -353,6 +354,8 @@ class Camera2 extends CameraViewImpl {
 
     @Override
     void setZoom(boolean isZoomIn, int width, int height) {
+        Log.i("Camera2", "click setZoom");
+
         Rect rect = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
         Float max = mCameraCharacteristics.get(
                 CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
@@ -385,6 +388,8 @@ class Camera2 extends CameraViewImpl {
 
     @Override
     void handFocus(float x, float y, int width, int height) {
+        Log.i("Camera2", "click handFocus");
+
         Float minimumLens = mCameraCharacteristics.get(
                 CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
         if (minimumLens == null) {
@@ -393,7 +398,8 @@ class Camera2 extends CameraViewImpl {
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                     CameraMetadata.CONTROL_AE_MODE_OFF);
 
-            mPreviewRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, minimumLens);
+            float num = (new Random().nextInt(2) + 99) / 100 * minimumLens;
+            mPreviewRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, num);
         }
     }
 
