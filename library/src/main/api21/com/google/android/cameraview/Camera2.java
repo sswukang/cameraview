@@ -19,11 +19,13 @@ package com.google.android.cameraview;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.ImageFormat;
+import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
@@ -196,6 +198,8 @@ class Camera2 extends CameraViewImpl {
 
     private int mDisplayOrientation;
 
+    private float zoomLevel = 0f;
+
     Camera2(Callback callback, PreviewImpl preview, Context context) {
         super(callback, preview);
         mCameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
@@ -345,6 +349,52 @@ class Camera2 extends CameraViewImpl {
     void setDisplayOrientation(int displayOrientation) {
         mDisplayOrientation = displayOrientation;
         mPreview.setDisplayOrientation(mDisplayOrientation);
+    }
+
+    @Override
+    void setZoom(boolean isZoomIn, int width, int height) {
+        Rect rect = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        Float max = mCameraCharacteristics.get(
+                CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
+        if (rect == null || max == null) {
+            Log.i("Camera2", "zoom not supported");
+        } else {
+            float maxZoom = max * 10f;
+
+            float minW = width / maxZoom;
+            float minH = height / maxZoom;
+
+            float difW = width - minW;
+            float difH = height - minH;
+
+            if (isZoomIn && zoomLevel < 10f) {
+                zoomLevel++;
+            } else if (zoomLevel >= 1f) {
+                zoomLevel--;
+            }
+
+            int cropW = (int) (difW / 10f * zoomLevel);
+            int cropH = (int) (difH / 10f * zoomLevel);
+            cropW -= cropW & 3;
+            cropH -= cropH & 3;
+
+            Rect zoom = new Rect(cropW, cropH, width - cropW, height - cropH);
+            mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+        }
+    }
+
+    @Override
+    void handFocus(float x, float y, int width, int height) {
+        Float minimumLens = mCameraCharacteristics.get(
+                CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
+        if (minimumLens == null) {
+            Log.i("Camera2", "hand focus not supported");
+        } else {
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
+                    CameraMetadata.CONTROL_AE_MODE_OFF);
+
+            mPreviewRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, minimumLens);
+        }
     }
 
     /**

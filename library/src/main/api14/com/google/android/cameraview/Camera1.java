@@ -17,13 +17,19 @@
 package com.google.android.cameraview;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.v4.util.SparseArrayCompat;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -269,6 +275,99 @@ class Camera1 extends CameraViewImpl {
                 mCamera.startPreview();
             }
         }
+    }
+
+    @Override
+    void setZoom(boolean isZoomIn, int width, int height) {
+        handleZoom(isZoomIn, mCamera);
+    }
+
+    @Override
+    void handFocus(float x, float y, int width, int height) {
+        if (Build.VERSION.SDK_INT < 14) {
+            Log.i("Camera1", "hand focus not supported");
+        } else {
+            handleFocusMetering(mCamera, x, y, width, height);
+        }
+    }
+
+    private void handleZoom(boolean isZoomIn, Camera camera) {
+        Camera.Parameters params = camera.getParameters();
+        if (params.isZoomSupported()) {
+            int maxZoom = params.getMaxZoom();
+            int zoom = params.getZoom();
+            if (isZoomIn && zoom < maxZoom) {
+                zoom++;
+            } else if (zoom > 0) {
+                zoom--;
+            }
+            params.setZoom(zoom);
+            camera.setParameters(params);
+        } else {
+            Log.i("Camera1", "zoom not supported");
+        }
+    }
+
+    @TargetApi(14)
+    private void handleFocusMetering(Camera camera, float x, float y, int width, int height) {
+        Rect focusRect = calculateTapArea(x, y, 1f, width, height);
+        Rect meteringRect = calculateTapArea(x, y, 1.5f, width, height);
+
+        camera.cancelAutoFocus();
+        Camera.Parameters params = camera.getParameters();
+        if (params.getMaxNumFocusAreas() > 0) {
+            List<Camera.Area> focusAreas = new ArrayList<>();
+            focusAreas.add(new Camera.Area(focusRect, 800));
+            params.setFocusAreas(focusAreas);
+        } else {
+            Log.i("Camera1", "focus areas not supported");
+        }
+        if (params.getMaxNumMeteringAreas() > 0) {
+            List<Camera.Area> meteringAreas = new ArrayList<>();
+            meteringAreas.add(new Camera.Area(meteringRect, 800));
+            params.setMeteringAreas(meteringAreas);
+        } else {
+            Log.i("Camera1", "metering areas not supported");
+        }
+//        final String currentFocusMode = params.getFocusMode();
+        params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+        camera.setParameters(params);
+
+//        camera.autoFocus(new Camera.AutoFocusCallback() {
+//            @Override
+//            public void onAutoFocus(boolean success, Camera camera) {
+//                Camera.Parameters params = camera.getParameters();
+//                params.setFocusMode(currentFocusMode);
+//                camera.setParameters(params);
+//            }
+//        });
+    }
+
+    @NonNull
+    private static Rect calculateTapArea(float x, float y, float coefficient, int width,
+            int height) {
+        float focusAreaSize = 300;
+        int areaSize = Float.valueOf(focusAreaSize * coefficient).intValue();
+        int centerX = (int) (x / width * 2000 - 1000);
+        int centerY = (int) (y / height * 2000 - 1000);
+
+        int halfAreaSize = areaSize / 2;
+        RectF rectF = new RectF(clamp(centerX - halfAreaSize, -1000, 1000)
+                , clamp(centerY - halfAreaSize, -1000, 1000)
+                , clamp(centerX + halfAreaSize, -1000, 1000)
+                , clamp(centerY + halfAreaSize, -1000, 1000));
+        return new Rect(Math.round(rectF.left), Math.round(rectF.top), Math.round(rectF.right),
+                Math.round(rectF.bottom));
+    }
+
+    private static int clamp(int x, int min, int max) {
+        if (x > max) {
+            return max;
+        }
+        if (x < min) {
+            return min;
+        }
+        return x;
     }
 
     /**

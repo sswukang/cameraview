@@ -69,6 +69,10 @@ abstract class CameraViewImpl {
 
     abstract void setDisplayOrientation(int displayOrientation);
 
+    abstract void setZoom(boolean isZoomIn, int width, int height);
+
+    abstract void handFocus(float x, float y, int width, int height);
+
     interface Callback {
 
         void onCameraOpened();
