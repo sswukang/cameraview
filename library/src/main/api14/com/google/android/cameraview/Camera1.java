@@ -277,20 +277,30 @@ class Camera1 extends CameraViewImpl {
     }
 
     @Override
-    void setZoom(boolean isZoomIn, int width, int height) {
+    void setZoom(boolean isZoomIn, float fingerSpacing, int width, int height,
+            CameraView.ZoomListener mZoomListener) {
         Log.i("Camera1", "click setZoom");
 
-        Camera.Parameters params = mCamera.getParameters();
-        if (params.isZoomSupported()) {
-            int maxZoom = params.getMaxZoom();
-            int zoom = params.getZoom();
+        if (mCameraParameters.isZoomSupported()) {
+            int maxZoom = mCameraParameters.getMaxZoom();
+            int zoom = mCameraParameters.getZoom();
             if (isZoomIn && zoom < maxZoom) {
                 zoom++;
             } else if (zoom > 0) {
                 zoom--;
             }
-            params.setZoom(zoom);
-            mCamera.setParameters(params);
+            mCameraParameters.setZoom(zoom);
+            mCamera.setParameters(mCameraParameters);
+        } else {
+            Log.i("Camera1", "zoom not supported");
+        }
+    }
+
+    @Override
+    void zoomRestore() {
+        if (mCameraParameters.isZoomSupported()) {
+            mCameraParameters.setZoom(0);
+            mCamera.setParameters(mCameraParameters);
         } else {
             Log.i("Camera1", "zoom not supported");
         }
@@ -307,31 +317,29 @@ class Camera1 extends CameraViewImpl {
             Rect meteringRect = calculateTapArea(x, y, 1.5f, width, height);
 
             mCamera.cancelAutoFocus();
-            Camera.Parameters params = mCamera.getParameters();
-            if (params.getMaxNumFocusAreas() > 0) {
+            if (mCameraParameters.getMaxNumFocusAreas() > 0) {
                 List<Camera.Area> focusAreas = new ArrayList<>();
                 focusAreas.add(new Camera.Area(focusRect, 800));
-                params.setFocusAreas(focusAreas);
+                mCameraParameters.setFocusAreas(focusAreas);
             } else {
                 Log.i("Camera1", "focus areas not supported");
             }
-            if (params.getMaxNumMeteringAreas() > 0) {
+            if (mCameraParameters.getMaxNumMeteringAreas() > 0) {
                 List<Camera.Area> meteringAreas = new ArrayList<>();
                 meteringAreas.add(new Camera.Area(meteringRect, 800));
-                params.setMeteringAreas(meteringAreas);
+                mCameraParameters.setMeteringAreas(meteringAreas);
             } else {
                 Log.i("Camera1", "metering areas not supported");
             }
-            final String currentFocusMode = params.getFocusMode();
-            params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
-            mCamera.setParameters(params);
+            final String currentFocusMode = mCameraParameters.getFocusMode();
+            mCameraParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+            mCamera.setParameters(mCameraParameters);
 
             mCamera.autoFocus(new Camera.AutoFocusCallback() {
                 @Override
                 public void onAutoFocus(boolean success, Camera camera) {
-                    Camera.Parameters params = camera.getParameters();
-                    params.setFocusMode(currentFocusMode);
-                    camera.setParameters(params);
+                    mCameraParameters.setFocusMode(currentFocusMode);
+                    camera.setParameters(mCameraParameters);
                 }
             });
         }

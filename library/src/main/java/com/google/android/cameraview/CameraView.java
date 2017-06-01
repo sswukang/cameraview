@@ -408,36 +408,51 @@ public class CameraView extends FrameLayout {
         mImpl.takePicture();
     }
 
+    public void zoomRestore() {
+        mImpl.zoomRestore();
+    }
+
+    public void setZoomListener(ZoomListener listener) {
+        mZoomListener = listener;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (event.getPointerCount() == 1) {
-            mImpl.handFocus(event.getX(), event.getY(), getWidth(), getHeight());
-            return true;
-        } else {
-            switch (event.getAction() & MotionEvent.ACTION_MASK) {
-                case MotionEvent.ACTION_POINTER_DOWN:
-                    oldDist = getFingerSpacing(event);
-                    return true;
-                case MotionEvent.ACTION_MOVE:
-                    float newDist = getFingerSpacing(event);
-                    if (newDist > oldDist) {
-                        mImpl.setZoom(true, getWidth(), getHeight());
-                    } else if (newDist < oldDist) {
-                        mImpl.setZoom(false, getWidth(), getHeight());
-                    }
-                    oldDist = newDist;
-                    return true;
+        if (mZoomListener != null) {
+            if (event.getPointerCount() == 1) {
+                mImpl.handFocus(event.getX(), event.getY(), getWidth(), getHeight());
+                return true;
+            } else {
+                switch (event.getAction() & MotionEvent.ACTION_MASK) {
+                    case MotionEvent.ACTION_POINTER_DOWN:
+                        oldDist = getFingerSpacing(event);
+                        return true;
+                    case MotionEvent.ACTION_MOVE:
+                        float newDist = getFingerSpacing(event);
+                        if (newDist > oldDist) {
+                            mImpl.setZoom(true, newDist, getWidth(), getHeight(), mZoomListener);
+                        } else if (newDist < oldDist) {
+                            mImpl.setZoom(false, newDist, getWidth(), getHeight(), mZoomListener);
+                        }
+                        oldDist = newDist;
+                        return true;
+                }
             }
         }
         return super.onTouchEvent(event);
     }
 
     private float oldDist;
+    private ZoomListener mZoomListener;
 
     private static float getFingerSpacing(MotionEvent event) {
         float x = event.getX(0) - event.getX(1);
         float y = event.getY(0) - event.getY(1);
         return (float) Math.sqrt(x * x + y * y);
+    }
+
+    public interface ZoomListener {
+        void onZoom();
     }
 
     private class CallbackBridge implements CameraViewImpl.Callback {

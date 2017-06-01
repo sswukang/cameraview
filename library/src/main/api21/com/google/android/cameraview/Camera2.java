@@ -200,6 +200,7 @@ class Camera2 extends CameraViewImpl {
     private int mDisplayOrientation;
 
     private float zoomLevel = 0f;
+    private float fingerSpacing = 0f;
 
     Camera2(Callback callback, PreviewImpl preview, Context context) {
         super(callback, preview);
@@ -330,6 +331,10 @@ class Camera2 extends CameraViewImpl {
                 }
             }
         }
+
+        if (flash != Constants.FLASH_OFF) {
+            zoomRestore();
+        }
     }
 
     @Override
@@ -353,7 +358,8 @@ class Camera2 extends CameraViewImpl {
     }
 
     @Override
-    void setZoom(boolean isZoomIn, int width, int height) {
+    void setZoom(boolean isZoomIn, float fingerSpacing, int width, int height,
+            CameraView.ZoomListener mZoomListener) {
         Log.i("Camera2", "click setZoom");
 
         Rect rect = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
@@ -362,27 +368,53 @@ class Camera2 extends CameraViewImpl {
         if (rect == null || max == null) {
             Log.i("Camera2", "zoom not supported");
         } else {
+            mZoomListener.onZoom();
+
             float maxZoom = max * 10f;
+            if (this.fingerSpacing != 0) {
+                if (fingerSpacing > this.fingerSpacing && maxZoom > zoomLevel) {
+                    zoomLevel++;
 
-            float minW = width / maxZoom;
-            float minH = height / maxZoom;
+                } else if (fingerSpacing < this.fingerSpacing && zoomLevel >= 1) {
+                    zoomLevel--;
 
-            float difW = width - minW;
-            float difH = height - minH;
-
-            if (isZoomIn && zoomLevel < 10f) {
-                zoomLevel++;
-            } else if (zoomLevel >= 1f) {
-                zoomLevel--;
+                }
+                float minW = width / maxZoom;
+                float minH = height / maxZoom;
+                float difW = width - minW;
+                float difH = height - minH;
+                int cropW = (int) (difW / 100 * zoomLevel);
+                int cropH = (int) (difH / 100 * zoomLevel);
+                cropW -= cropW & 3;
+                cropH -= cropH & 3;
+                Rect zoom = new Rect(cropW, cropH, width - cropW, height - cropH);
+                mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
             }
+            this.fingerSpacing = fingerSpacing;
+            try {
+                mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
+                        mCaptureCallback,
+                        null);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-            int cropW = (int) (difW / 10f * zoomLevel);
-            int cropH = (int) (difH / 10f * zoomLevel);
-            cropW -= cropW & 3;
-            cropH -= cropH & 3;
-
-            Rect zoom = new Rect(cropW, cropH, width - cropW, height - cropH);
-            mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+    @Override
+    void zoomRestore() {
+        Rect rect = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        if (rect == null) {
+            Log.i("Camera2", "zoom not supported");
+        } else {
+            mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, rect);
+            try {
+                mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
+                        mCaptureCallback,
+                        null);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -398,8 +430,15 @@ class Camera2 extends CameraViewImpl {
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                     CameraMetadata.CONTROL_AE_MODE_OFF);
 
-            float num = (new Random().nextInt(2) + 99) / 100 * minimumLens;
+            float num = (new Random().nextInt(99) + 1) / 100 * minimumLens;
             mPreviewRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, num);
+            try {
+                mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
+                        mCaptureCallback,
+                        null);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
         }
     }
 
