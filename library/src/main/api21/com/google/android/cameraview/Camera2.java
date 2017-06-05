@@ -201,7 +201,6 @@ class Camera2 extends CameraViewImpl {
 
     private float zoomLevel = 0f;
     private float fingerSpacing = 0f;
-    private CameraView.C2Listener mC2Listener;
 
     Camera2(Callback callback, PreviewImpl preview, Context context) {
         super(callback, preview);
@@ -364,11 +363,6 @@ class Camera2 extends CameraViewImpl {
         if (rect == null || max == null) {
             Log.i("Camera2", "zoom not supported");
         } else {
-            if (mC2Listener != null) {
-                setFacing(Constants.FLASH_OFF);
-                mC2Listener.onZoom();
-            }
-
             float maxZoom = max * 20f;
             int width = rect.width();
             int height = rect.height();
@@ -442,11 +436,6 @@ class Camera2 extends CameraViewImpl {
                 e.printStackTrace();
             }
         }
-    }
-
-    @Override
-    void setC2Listener(CameraView.C2Listener mC2Listener) {
-        this.mC2Listener = mC2Listener;
     }
 
     /**

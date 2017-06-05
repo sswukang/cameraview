@@ -412,6 +412,8 @@ public class CameraView extends FrameLayout {
         mImpl.zoomRestore();
     }
 
+    private float oldDist;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getPointerCount() == 1) {
@@ -440,16 +442,6 @@ public class CameraView extends FrameLayout {
         float x = event.getX(0) - event.getX(1);
         float y = event.getY(0) - event.getY(1);
         return (float) Math.sqrt(x * x + y * y);
-    }
-
-    private float oldDist;
-
-    public void setC2Listener(C2Listener listener) {
-        mImpl.setC2Listener(listener);
-    }
-
-    public interface C2Listener {
-        void onZoom();
     }
 
     private class CallbackBridge implements CameraViewImpl.Callback {

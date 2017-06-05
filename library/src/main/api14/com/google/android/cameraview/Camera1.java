@@ -344,10 +344,6 @@ class Camera1 extends CameraViewImpl {
         }
     }
 
-    @Override
-    void setC2Listener(CameraView.C2Listener mC2Listener) {
-    }
-
     @NonNull
     private static Rect calculateTapArea(float x, float y, float coefficient, int width,
             int height) {

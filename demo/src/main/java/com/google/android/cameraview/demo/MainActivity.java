@@ -110,12 +110,6 @@ public class MainActivity extends AppCompatActivity implements
         mCameraView = (CameraView) findViewById(R.id.camera);
         if (mCameraView != null) {
             mCameraView.addCallback(mCallback);
-            mCameraView.setC2Listener(new CameraView.C2Listener() {
-                @Override
-                public void onZoom() {
-                    // change flash icon
-                }
-            });
         }
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.take_picture);
         if (fab != null) {

@@ -75,8 +75,6 @@ abstract class CameraViewImpl {
 
     abstract void handFocus(float x, float y, int width, int height);
 
-    abstract void setC2Listener(CameraView.C2Listener mC2Listener);
-
     interface Callback {
 
         void onCameraOpened();
