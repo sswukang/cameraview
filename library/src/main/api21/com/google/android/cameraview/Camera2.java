@@ -691,6 +691,8 @@ class Camera2 extends CameraViewImpl {
             captureRequestBuilder.addTarget(mImageReader.getSurface());
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                     mPreviewRequestBuilder.get(CaptureRequest.CONTROL_AF_MODE));
+            captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION,
+                    mPreviewRequestBuilder.get(CaptureRequest.SCALER_CROP_REGION));
             switch (mFlash) {
                 case Constants.FLASH_OFF:
                     captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
