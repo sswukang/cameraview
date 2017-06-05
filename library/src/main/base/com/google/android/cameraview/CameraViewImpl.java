@@ -69,7 +69,7 @@ abstract class CameraViewImpl {
 
     abstract void setDisplayOrientation(int displayOrientation);
 
-    abstract void setZoom(boolean isZoomIn, float fingerSpacing, int width, int height);
+    abstract void setZoom(boolean isZoomIn, float fingerSpacing);
 
     abstract void zoomRestore();
 

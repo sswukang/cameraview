@@ -333,7 +333,9 @@ class Camera2 extends CameraViewImpl {
             }
         }
 
-        if (flash != Constants.FLASH_OFF && mC2Listener != null) mC2Listener.onFlash();
+        if (flash != Constants.FLASH_OFF && mC2Listener != null) {
+            zoomRestore();
+        }
     }
 
     @Override
@@ -357,7 +359,7 @@ class Camera2 extends CameraViewImpl {
     }
 
     @Override
-    void setZoom(boolean isZoomIn, float fingerSpacing, int width, int height) {
+    void setZoom(boolean isZoomIn, float fingerSpacing) {
         Log.i("Camera2", "click setZoom");
 
         Rect rect = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
@@ -366,23 +368,29 @@ class Camera2 extends CameraViewImpl {
         if (rect == null || max == null) {
             Log.i("Camera2", "zoom not supported");
         } else {
-            if (mC2Listener != null) mC2Listener.onZoom();
+            if (mC2Listener != null) {
+                setFacing(Constants.FLASH_OFF);
+                mC2Listener.onZoom();
+            }
 
-            float maxZoom = max * 10f;
+            float maxZoom = max * 20f;
+            int width = rect.width();
+            int height = rect.height();
             if (this.fingerSpacing != 0) {
                 if (fingerSpacing > this.fingerSpacing && maxZoom > zoomLevel) {
                     zoomLevel++;
-
-                } else if (fingerSpacing < this.fingerSpacing && zoomLevel >= 1) {
+                } else if (fingerSpacing < this.fingerSpacing && zoomLevel >= 1f) {
                     zoomLevel--;
-
+                } else {
+                    return;
                 }
+
                 float minW = width / maxZoom;
                 float minH = height / maxZoom;
                 float difW = width - minW;
                 float difH = height - minH;
-                int cropW = (int) (difW / 100 * zoomLevel);
-                int cropH = (int) (difH / 100 * zoomLevel);
+                int cropW = (int) (difW / 200f * zoomLevel);
+                int cropH = (int) (difH / 200f * zoomLevel);
                 cropW -= cropW & 3;
                 cropH -= cropH & 3;
                 Rect zoom = new Rect(cropW, cropH, width - cropW, height - cropH);

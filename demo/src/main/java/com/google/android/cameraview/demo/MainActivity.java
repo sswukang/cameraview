@@ -113,12 +113,7 @@ public class MainActivity extends AppCompatActivity implements
             mCameraView.setC2Listener(new CameraView.C2Listener() {
                 @Override
                 public void onZoom() {
-
-                }
-
-                @Override
-                public void onFlash() {
-
+                    // change flash icon
                 }
             });
         }

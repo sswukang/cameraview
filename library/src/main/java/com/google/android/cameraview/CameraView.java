@@ -414,25 +414,23 @@ public class CameraView extends FrameLayout {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (mC2Listener != null) {
-            if (event.getPointerCount() == 1) {
-                mImpl.handFocus(event.getX(), event.getY(), getWidth(), getHeight());
-                return true;
-            } else {
-                switch (event.getAction() & MotionEvent.ACTION_MASK) {
-                    case MotionEvent.ACTION_POINTER_DOWN:
-                        oldDist = getFingerSpacing(event);
-                        return true;
-                    case MotionEvent.ACTION_MOVE:
-                        float newDist = getFingerSpacing(event);
-                        if (newDist > oldDist) {
-                            mImpl.setZoom(true, newDist, getWidth(), getHeight());
-                        } else if (newDist < oldDist) {
-                            mImpl.setZoom(false, newDist, getWidth(), getHeight());
-                        }
-                        oldDist = newDist;
-                        return true;
-                }
+        if (event.getPointerCount() == 1) {
+            mImpl.handFocus(event.getX(), event.getY(), getWidth(), getHeight());
+            return true;
+        } else {
+            switch (event.getAction() & MotionEvent.ACTION_MASK) {
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    oldDist = getFingerSpacing(event);
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    float newDist = getFingerSpacing(event);
+                    if (newDist > oldDist) {
+                        mImpl.setZoom(true, newDist);
+                    } else if (newDist < oldDist) {
+                        mImpl.setZoom(false, newDist);
+                    }
+                    oldDist = newDist;
+                    return true;
             }
         }
         return super.onTouchEvent(event);
@@ -445,16 +443,13 @@ public class CameraView extends FrameLayout {
     }
 
     private float oldDist;
-    private C2Listener mC2Listener;
 
     public void setC2Listener(C2Listener listener) {
-        mC2Listener = listener;
+        mImpl.setC2Listener(listener);
     }
 
     public interface C2Listener {
         void onZoom();
-
-        void onFlash();
     }
 
     private class CallbackBridge implements CameraViewImpl.Callback {
