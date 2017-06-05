@@ -332,10 +332,6 @@ class Camera2 extends CameraViewImpl {
                 }
             }
         }
-
-        if (flash != Constants.FLASH_OFF && mC2Listener != null) {
-            zoomRestore();
-        }
     }
 
     @Override
