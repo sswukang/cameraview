@@ -277,8 +277,7 @@ class Camera1 extends CameraViewImpl {
     }
 
     @Override
-    void setZoom(boolean isZoomIn, float fingerSpacing, int width, int height,
-            CameraView.ZoomListener mZoomListener) {
+    void setZoom(boolean isZoomIn, float fingerSpacing, int width, int height) {
         Log.i("Camera1", "click setZoom");
 
         if (mCameraParameters.isZoomSupported()) {
@@ -343,6 +342,10 @@ class Camera1 extends CameraViewImpl {
                 }
             });
         }
+    }
+
+    @Override
+    void setC2Listener(CameraView.C2Listener mC2Listener) {
     }
 
     @NonNull

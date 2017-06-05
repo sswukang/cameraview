@@ -201,6 +201,7 @@ class Camera2 extends CameraViewImpl {
 
     private float zoomLevel = 0f;
     private float fingerSpacing = 0f;
+    private CameraView.C2Listener mC2Listener;
 
     Camera2(Callback callback, PreviewImpl preview, Context context) {
         super(callback, preview);
@@ -332,9 +333,7 @@ class Camera2 extends CameraViewImpl {
             }
         }
 
-        if (flash != Constants.FLASH_OFF) {
-            zoomRestore();
-        }
+        if (flash != Constants.FLASH_OFF && mC2Listener != null) mC2Listener.onFlash();
     }
 
     @Override
@@ -358,8 +357,7 @@ class Camera2 extends CameraViewImpl {
     }
 
     @Override
-    void setZoom(boolean isZoomIn, float fingerSpacing, int width, int height,
-            CameraView.ZoomListener mZoomListener) {
+    void setZoom(boolean isZoomIn, float fingerSpacing, int width, int height) {
         Log.i("Camera2", "click setZoom");
 
         Rect rect = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
@@ -368,7 +366,7 @@ class Camera2 extends CameraViewImpl {
         if (rect == null || max == null) {
             Log.i("Camera2", "zoom not supported");
         } else {
-            mZoomListener.onZoom();
+            if (mC2Listener != null) mC2Listener.onZoom();
 
             float maxZoom = max * 10f;
             if (this.fingerSpacing != 0) {
@@ -440,6 +438,11 @@ class Camera2 extends CameraViewImpl {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    void setC2Listener(CameraView.C2Listener mC2Listener) {
+        this.mC2Listener = mC2Listener;
     }
 
     /**

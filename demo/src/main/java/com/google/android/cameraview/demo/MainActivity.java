@@ -110,9 +110,14 @@ public class MainActivity extends AppCompatActivity implements
         mCameraView = (CameraView) findViewById(R.id.camera);
         if (mCameraView != null) {
             mCameraView.addCallback(mCallback);
-            mCameraView.setZoomListener(new CameraView.ZoomListener() {
+            mCameraView.setC2Listener(new CameraView.C2Listener() {
                 @Override
                 public void onZoom() {
+
+                }
+
+                @Override
+                public void onFlash() {
 
                 }
             });

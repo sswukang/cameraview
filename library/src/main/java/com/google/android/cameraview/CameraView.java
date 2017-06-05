@@ -412,13 +412,9 @@ public class CameraView extends FrameLayout {
         mImpl.zoomRestore();
     }
 
-    public void setZoomListener(ZoomListener listener) {
-        mZoomListener = listener;
-    }
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (mZoomListener != null) {
+        if (mC2Listener != null) {
             if (event.getPointerCount() == 1) {
                 mImpl.handFocus(event.getX(), event.getY(), getWidth(), getHeight());
                 return true;
@@ -430,9 +426,9 @@ public class CameraView extends FrameLayout {
                     case MotionEvent.ACTION_MOVE:
                         float newDist = getFingerSpacing(event);
                         if (newDist > oldDist) {
-                            mImpl.setZoom(true, newDist, getWidth(), getHeight(), mZoomListener);
+                            mImpl.setZoom(true, newDist, getWidth(), getHeight());
                         } else if (newDist < oldDist) {
-                            mImpl.setZoom(false, newDist, getWidth(), getHeight(), mZoomListener);
+                            mImpl.setZoom(false, newDist, getWidth(), getHeight());
                         }
                         oldDist = newDist;
                         return true;
@@ -442,17 +438,23 @@ public class CameraView extends FrameLayout {
         return super.onTouchEvent(event);
     }
 
-    private float oldDist;
-    private ZoomListener mZoomListener;
-
     private static float getFingerSpacing(MotionEvent event) {
         float x = event.getX(0) - event.getX(1);
         float y = event.getY(0) - event.getY(1);
         return (float) Math.sqrt(x * x + y * y);
     }
 
-    public interface ZoomListener {
+    private float oldDist;
+    private C2Listener mC2Listener;
+
+    public void setC2Listener(C2Listener listener) {
+        mC2Listener = listener;
+    }
+
+    public interface C2Listener {
         void onZoom();
+
+        void onFlash();
     }
 
     private class CallbackBridge implements CameraViewImpl.Callback {
