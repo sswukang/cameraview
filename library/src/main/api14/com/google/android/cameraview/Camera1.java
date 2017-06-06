@@ -316,6 +316,7 @@ class Camera1 extends CameraViewImpl {
             Rect meteringRect = calculateTapArea(x, y, 1.5f, width, height);
 
             mCamera.cancelAutoFocus();
+            List<String> supportedFocusModes = mCameraParameters.getSupportedFocusModes();
             if (mCameraParameters.getMaxNumFocusAreas() > 0) {
                 List<Camera.Area> focusAreas = new ArrayList<>();
                 focusAreas.add(new Camera.Area(focusRect, 800));
@@ -331,7 +332,11 @@ class Camera1 extends CameraViewImpl {
                 Log.i("Camera1", "metering areas not supported");
             }
             final String currentFocusMode = mCameraParameters.getFocusMode();
-            mCameraParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+            if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_MACRO)) {
+                mCameraParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+            } else {
+                Log.i("Camera1", "focus mode macro not supported");
+            }
             mCamera.setParameters(mCameraParameters);
 
             mCamera.autoFocus(new Camera.AutoFocusCallback() {
@@ -498,7 +503,9 @@ class Camera1 extends CameraViewImpl {
         if (isCameraOpened()) {
             final List<String> modes = mCameraParameters.getSupportedFocusModes();
             if (autoFocus && modes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
-                mCameraParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                    mCameraParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+                }
             } else if (modes.contains(Camera.Parameters.FOCUS_MODE_FIXED)) {
                 mCameraParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_FIXED);
             } else if (modes.contains(Camera.Parameters.FOCUS_MODE_INFINITY)) {
