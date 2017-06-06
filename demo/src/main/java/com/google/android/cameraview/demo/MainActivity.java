@@ -20,9 +20,12 @@ import android.Manifest;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -32,6 +35,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -39,16 +43,15 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Surface;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.android.cameraview.AspectRatio;
 import com.google.android.cameraview.CameraView;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Set;
 
 
@@ -86,6 +89,8 @@ public class MainActivity extends AppCompatActivity implements
 
     private int mCurrentFlash;
 
+    private ImageView mImageView;
+
     private CameraView mCameraView;
 
     private Handler mBackgroundHandler;
@@ -104,9 +109,20 @@ public class MainActivity extends AppCompatActivity implements
     };
 
     @Override
+    public void onBackPressed() {
+        if (mImageView.getVisibility() == View.VISIBLE) {
+            mImageView.setVisibility(View.GONE);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mImageView = (ImageView) findViewById(R.id.show_picture);
+        mImageView.setVisibility(View.GONE);
         mCameraView = (CameraView) findViewById(R.id.camera);
         if (mCameraView != null) {
             mCameraView.addCallback(mCallback);
@@ -255,29 +271,56 @@ public class MainActivity extends AppCompatActivity implements
             getBackgroundHandler().post(new Runnable() {
                 @Override
                 public void run() {
-                    File file = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                            "picture.jpg");
-                    OutputStream os = null;
-                    try {
-                        os = new FileOutputStream(file);
-                        os.write(data);
-                        os.close();
-                    } catch (IOException e) {
-                        Log.w(TAG, "Cannot write to " + file, e);
-                    } finally {
-                        if (os != null) {
-                            try {
-                                os.close();
-                            } catch (IOException e) {
-                                // Ignore
-                            }
-                        }
+                    BitmapFactory.Options e = new BitmapFactory.Options();
+                    e.inJustDecodeBounds = true;
+                    Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, e);
+                    if (bitmap != null) {
+                        bitmap.recycle();
                     }
+
+                    int w = e.outWidth;
+                    int l = e.outHeight;
+                    int what = w > l ? w : l;
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    if (what > 8000) {
+                        options.inSampleSize = 8;
+                    } else if (what > 4000) {
+                        options.inSampleSize = 4;
+                    } else if (what > 2000) {
+                        options.inSampleSize = 2;
+                    } else {
+                        options.inSampleSize = 1;
+                    }
+                    options.inJustDecodeBounds = false;
+                    bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+                    bitmap = changeCameraDisplay(mCameraView, bitmap);
+                    final Bitmap finalBitmap = bitmap;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mImageView.setVisibility(View.VISIBLE);
+                            mImageView.setImageBitmap(finalBitmap);
+                        }
+                    });
                 }
             });
         }
-
     };
+
+    private Bitmap changeCameraDisplay(CameraView cameraView, Bitmap bmp) {
+        if (cameraView.getFacing() == CameraView.FACING_FRONT) {
+            Matrix matrix = new Matrix();
+            int rotation = ViewCompat.getDisplay(cameraView).getRotation();
+            if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
+                matrix.postScale(1, -1);
+            } else {
+                matrix.postScale(-1, 1);
+            }
+            return Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(), bmp.getHeight(), matrix, true);
+        } else {
+            return bmp;
+        }
+    }
 
     public static class ConfirmationDialogFragment extends DialogFragment {
 

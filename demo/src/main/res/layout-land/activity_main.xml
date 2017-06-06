@@ -50,4 +50,10 @@
         app:useCompatPadding="true"
         tools:ignore="RelativeOverlap"/>
 
+    <ImageView
+        android:id="@+id/show_picture"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:scaleType="fitCenter"/>
 </RelativeLayout>

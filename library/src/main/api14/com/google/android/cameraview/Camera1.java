@@ -489,7 +489,7 @@ class Camera1 extends CameraViewImpl {
 
     private int calcCameraRotation(int rotation) {
         if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            return (360 - (mCameraInfo.orientation + rotation) % 360) % 360;
+            return ((mCameraInfo.orientation - rotation + 360) % 360 + 180) % 360;
         } else {  // back-facing
             return (mCameraInfo.orientation - rotation + 360) % 360;
         }
